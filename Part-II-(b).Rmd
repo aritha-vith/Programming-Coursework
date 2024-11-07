@@ -1,0 +1,33 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Part II (b)
+
+```{r coursework}
+library(dplyr)
+library(ggplot2)
+
+# Load CSV
+dfData <- read.csv('PreprocessedData/DelayData.csv')
+
+# Subsets
+grpAge <- dfData %>%
+  filter(ManuYear != 'None' & ManuYear != '0') %>%
+  mutate(Year = Year - as.integer(ManuYear)) %>%
+  group_by(Year) %>%
+  summarise(ArrDelay = mean(ArrDelay), DepDelay = mean(DepDelay)) %>%
+  slice(-1)
+
+X <- grpAge$Year
+Y <- grpAge$ArrDelay + grpAge$DepDelay
+
+rd <- data.frame(x=X, y=Y)
+yfit <- lm(Y~poly(x,3,raw=TRUE), data=rd)
+
+# Visualize
+plot(X, Y, type='o', col='red', xlab='Age (Years)', ylab='Delay (min)', main='Age Vs Delay')
+lines(X, predict(yfit, data.frame(x=X)), col='green')
+
+
+```

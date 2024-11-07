@@ -1,0 +1,48 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preprocessor
+
+```{r coursework}
+library(dplyr)
+
+# Load CSV files
+dfData0 <- read.csv('OriginalData/2006.csv')
+dfData1 <- read.csv('OriginalData/2007.csv')
+dfPlanes <- read.csv('OriginalData/plane-data.csv')
+dfPorts <- pd.read_csv('OriginalData/airports.csv')
+# Merge dataframes based on 'TailNum' column
+mergedDf <- merge(merge(dfData0, dfData1, all = TRUE), dfPlanes, by = 'TailNum', all.x = TRUE)
+
+# Generate new dataframe with selected columns for parts (a) and (b)
+newDf_a_b <- mergedDf %>%
+  select(Year, Month, DayofMonth, DayOfWeek, DepTime, ArrDelay, DepDelay, Cancelled, Diverted, TailNum, year) %>%
+  na.omit() %>%
+  filter(ArrDelay >= 0 & DepDelay >= 0 & Cancelled != 1 & Diverted != 1)
+
+# Save dataframe to CSV file for parts (a) and (b)
+write.csv(newDf_a_b, file = 'PreprocessedData/DelayData.csv', row.names = FALSE)
+
+# Generate new dataframe with selected columns for part (c)
+newDf_c <- mergedDf %>%
+  select(Year, Month, DayofMonth, CRSDepTime, CRSArrTime, UniqueCarrier, Origin, Dest, Distance, Cancelled, Diverted) %>%
+  na.omit() %>%
+  filter(Cancelled != 1 & !(Origin %in% c('YAP', 'SPN', 'ROR', 'ROP')) & !(Dest %in% c('YAP', 'SPN', 'ROR', 'ROP')))
+names(newDf)[names(newDf) == "Origin"] <- "iata"
+newDf <- merge(newDf, dfPorts, by="iata", all.x=TRUE)
+names(newDf)[names(newDf) == "iata"] <- "Origin"
+names(newDf)[names(newDf) == "lat"] <- "Origin_lat"
+names(newDf)[names(newDf) == "long"] <- "Origin_lon"
+names(newDf)[names(newDf) == "Dest"] <- "iata"
+newDf <- merge(newDf, dfPorts, by="iata", all.x=TRUE)
+names(newDf)[names(newDf) == "iata"] <- "Dest"
+names(newDf)[names(newDf) == "lat"] <- "Dest_lat"
+names(newDf)[names(newDf) == "long"] <- "Dest_lon"
+newDf <- unique(newDf)
+newDf <- newDf[, !(names(newDf) %in% c('Origin', 'Dest', 'airport.x', 'city.x', 'state.x', 'country.x', 'airport.y', 'city.y', 'state.y', 'country.y'))]
+
+# Save dataframe to CSV file for part (c)
+write.csv(newDf_c, file = 'PreprocessedData/DivertData.csv', row.names = FALSE)
+
+```

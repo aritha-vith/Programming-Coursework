@@ -1,0 +1,55 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Part II (a)
+
+```{r coursework}
+library(dplyr)
+library(ggplot2)
+
+# Load CSV
+dfData <- read.csv('PreprocessedData/DelayData.csv')
+
+# Subsets
+grpDay <- dfData %>%
+  group_by(DayOfWeek) %>%
+  summarise(ArrDelay = mean(ArrDelay), DepDelay = mean(DepDelay))
+
+# Visualize
+Y <- t(grpDay['ArrDelay'] + grpDay['DepDelay'])
+X <- c("Mon", "Tue", "Wed", "Thr", "Fri", "Sat", "Sun")
+barplot(Y,names.arg=X,xlab="Day",ylab="Delay (min)",main="Average Delay and Day of the Week")
+
+dMin <- X[which.min(grpDay$ArrDelay + grpDay$DepDelay)]
+dMax <- X[which.max(grpDay$ArrDelay + grpDay$DepDelay)]
+cat(sprintf("Maximum delay on %s and minimum delay on %s. Therefore %s is the best day for a flight.\n", dMax, dMin, dMin))
+
+
+DepTime <- dfData$CRSDepTime
+DepDel <- dfData$DepDelay
+ArrDel <- dfData$ArrDelay
+
+X <- seq(0, 23)
+Y <- rep(0, 24)
+Hx <- rep(0, 24)
+
+hour_bins <- floor(DepTime / 100)
+Hx <- Hx + tapply(hour_bins, hour_bins, length)
+Y <- Y + tapply(DepDel + ArrDel, hour_bins, sum)
+
+nonzero_counts <- Hx != 0
+Y[nonzero_counts] <- Y[nonzero_counts] / Hx[nonzero_counts]
+
+df <- data.frame(X, Y)
+ggplot(df, aes(x = X, y = Y)) +
+  geom_line() +
+  labs(title = "Average delay and Time Plot",
+       x = "Time (24h)",
+       y = "Average Delay")
+
+dMin <- X[which.min(Y)]
+dMax <- X[which.max(Y)]
+cat("Maximum delay on", dMax, "h and miminum delay on", dMin, "h. Therefore", dMin, "h is the best time for a flight.\n")
+
+```

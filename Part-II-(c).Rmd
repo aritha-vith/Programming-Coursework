@@ -1,0 +1,55 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Part II (c)
+
+```{r coursework}
+library(dplyr)
+library(tidyr)
+library(caret)
+library(nnet)
+library(pheatmap)
+
+sliceSize <- 100000
+options(scipen=999)
+
+# Load CSV
+data <- read.csv('PreprocessedData/DivertData.csv')
+data <- rbind(head(data, sliceSize), tail(data, sliceSize))
+
+# Extract day of the week from the date fields
+data$Date <- as.Date(paste(data$Year, data$Month, data$DayofMonth, sep = "-"))
+data$DayOfWeek <- as.factor(format(data$Date, "%u"))
+
+X <- data[c('Year', 'DayOfWeek', 'UniqueCarrier', 'CRSDepTime', 'CRSArrTime', 'Distance', 'Origin_lat', 'Dest_lat', 'Origin_lon', 'Dest_lon')]
+Y <- data[c('Year', 'Diverted')]
+X$DayOfWeek <- as.integer(X$DayOfWeek)
+
+X1 <- X[X$Year == 2006, ]
+X1 <- subset(X1, select = -Year)
+X1 <- cbind(X1, model.matrix(~ UniqueCarrier - 1, data = X1))  # One-hot encoding UniqueCarrier
+Y1 <- Y[Y$Year == 2006, ]
+Y1 <- subset(Y1, select = -Year)
+model <- glm(Diverted ~ ., data = cbind(Y1, X1), family = binomial)
+coeff <- coef(model)[-1]
+
+# Barplot
+barplot(coeff, main = "Logistic Regression Coefficients for Flight Diversion Probability (2006)",
+        xlab = "Variables", ylab = "Coefficients",
+        col = heat.colors(length(coefficients)), las = 2)
+
+X1 <- X[X$Year == 2007, ]
+X1 <- subset(X1, select = -Year)
+X1 <- cbind(X1, model.matrix(~ UniqueCarrier - 1, data = X1))  # One-hot encoding UniqueCarrier
+Y1 <- Y[Y$Year == 2007, ]
+Y1 <- subset(Y1, select = -Year)
+model <- glm(Diverted ~ ., data = cbind(Y1, X1), family = binomial)
+coeff <- coef(model)[-1]
+
+# Barplot
+barplot(coeff, main = "Logistic Regression Coefficients for Flight Diversion Probability (2007)",
+        xlab = "Variables", ylab = "Coefficients",
+        col = heat.colors(length(coefficients)), las = 2)
+
+```
